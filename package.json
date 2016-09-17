@@ -1,0 +1,34 @@
+{
+  "name": "hexo-deployer-neocities",
+  "version": "0.1.0",
+  "description": "Neocities deployer for Hexo",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "jslint ./index.js",
+    "prepublish": "npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gburnett/hexo-deployer-neocities.git"
+  },
+  "keywords": [
+    "hexo",
+    "neocities",
+    "deploy",
+    "deployer"
+  ],
+  "author": "gburnett",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gburnett/hexo-deployer-neocities/issues"
+  },
+  "homepage": "https://github.com/gburnett/hexo-deployer-neocities#readme",
+  "dependencies": {
+    "neocities": "0.0.3",
+    "recursive-readdir": "^2.0.0"
+  },
+  "devDependencies": {
+    "jslint": "^0.10.3"
+  }
+}

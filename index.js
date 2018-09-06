@@ -1,67 +1,53 @@
-/*jslint node:true */
-/*global hexo */
-var NeoCities = require('neocities'),
-    recursive = require('recursive-readdir'),
-    fatalMessage = [
-        'DEPLOYMENT FAILED',
-        'You should check deployment settings in _config.yml first!',
-        '',
-        'Example:',
-        '  deploy:',
-        '    type: neocities',
-        '    user: <user>',
-        '    pass: <pass>',
-        '',
-        'For more help, you can check the docs: ' + 'http://hexo.io/docs/deployment.html'.underline
-    ].join('\n');
+const NeoCities = require('neocities')
+const counter = require('kicks-counter')
+const netrc = require('netrc')
+const path = require('path')
+const url = require('url')
+const walk = require('fswalk')
 
-hexo.extend.deployer.register('neocities', function (args, callback) {
-    'use strict';
-    var api,
-        logger = this.log,
-        responseHandler = function responseHandler(response) {
-            if (response.result === 'error') {
-                logger.error('Response from NeoCities: ');
-                logger.error(response.error_type);
-                logger.error(response.message);
-            } else if (response.result === 'success') {
-                logger.info('Response from NeoCities: ');
-                logger.info(response.result);
-                logger.info(response.message);
-            } else {
-                logger.warn(JSON.stringify(response));
+module.exports = function (src, opts, fn) {
+  var H = this,
+      creds = netrc()['neocities.org'],
+      basepath = '/'
+
+  if (opts.url) {
+    basepath = url.parse(opts.url).pathname
+  }
+  if (!creds || !creds.login || !creds.password) {
+    H.log.fail('No credentials in .netrc for neocities.org.')
+    return callback()
+  }
+
+  var count = counter(300),
+      api = new NeoCities(creds.login, creds.password),
+      currentfile = 'Neocities'
+  count.on('progress', () => {
+    H.log.info(`To Neocities: ${currentfile} (${count.at} of ${count.total})`)
+  })
+  H.log.info('Connecting to Neocities.')
+  walk(src, (filepath, stat) => {
+    if (stat.isFile()) {
+      count.todo()
+      H.sha1file(filepath, sha1sum => {
+        let filename = path.join(basepath, filepath.replace(src, ''))
+        api.post('upload_hash', [{name: filename, value: sha1sum}], resp => {
+          if (resp.files && resp.files[filename])
+            return count.done()
+
+          let obj = {path: filepath, name: filename}
+          api.upload([obj], resp => {
+            currentfile = obj.name 
+            if (resp.result == 'error') {
+              fn(new Error(resp.message), false)
             }
-
-            return callback();
-        },
-        recursiveReadHandler = function recursiveReadHandler(err, files) {
-            var stripPublicDir = function stripPublicDir(file) {
-                return file.replace(hexo.public_dir, '');
-            },
-                toFileObject = function toFileObject(filePath) {
-                    var fileName = stripPublicDir(filePath);
-                    return {
-                        name: fileName,
-                        path: filePath
-                    };
-                },
-                collectedPaths;
-
-            if (err) {
-                throw new Error(err);
-            }
-
-            collectedPaths = files
-                .map(toFileObject);
-
-            api = new NeoCities(args.user, args.pass);
-            api.upload(collectedPaths, responseHandler);
-        };
-
-    if (!args.user || args.pass === undefined) {
-        logger.fatal(fatalMessage);
-        return callback();
+            count.done()
+          })
+        })
+      })
     }
-
-    recursive(hexo.public_dir, recursiveReadHandler);
-});
+  }, err => {
+    count.start(() => {
+      fn(err, true)
+    })
+  })
+}

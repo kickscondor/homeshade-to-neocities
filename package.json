@@ -1,34 +1,31 @@
 {
-  "name": "hexo-deployer-neocities",
-  "version": "0.1.1",
-  "description": "Neocities deployer for Hexo",
+  "name": "homeshade-to-neocities",
+  "version": "0.2.1",
+  "description": "Neocities uploader for Homeshade",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "jslint ./index.js",
-    "prepublish": "npm run lint"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gburnett/hexo-deployer-neocities.git"
+    "url": "git+https://github.com/kickscondor/homeshade-to-neocities.git"
   },
   "keywords": [
-    "hexo",
-    "neocities",
-    "deploy",
-    "deployer"
+    "homeshade",
+    "homeshade-to",
+    "neocities"
   ],
-  "author": "gburnett",
+  "author": "kickscondor",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gburnett/hexo-deployer-neocities/issues"
+    "url": "https://github.com/kickscondor/homeshade-to-neocities/issues"
   },
-  "homepage": "https://github.com/gburnett/hexo-deployer-neocities#readme",
+  "homepage": "https://github.com/kickscondor/homeshade-to-neocities#readme",
   "dependencies": {
-    "neocities": "0.0.3",
-    "recursive-readdir": "^2.0.0"
+    "fswalk": "^1.2.0",
+    "kicks-counter": "^0.9.0",
+    "neocities": "kickscondor/neocities-node",
+    "netrc": "^0.1.4"
   },
-  "devDependencies": {
-    "jslint": "^0.10.3"
-  }
+  "devDependencies": {}
 }

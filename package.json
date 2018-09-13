@@ -22,10 +22,9 @@
   },
   "homepage": "https://github.com/kickscondor/homeshade-to-neocities#readme",
   "dependencies": {
-    "fswalk": "^1.2.0",
+    "async": "^2.6.1",
     "kicks-counter": "^0.9.0",
-    "neocities": "kickscondor/neocities-node",
-    "netrc": "^0.1.4"
+    "superagent": "^3.8.3"
   },
   "devDependencies": {}
 }

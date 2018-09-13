@@ -1,53 +1,81 @@
-const NeoCities = require('neocities')
+const async = require('async')
 const counter = require('kicks-counter')
-const netrc = require('netrc')
 const path = require('path')
+const request = require('superagent')
 const url = require('url')
-const walk = require('fswalk')
 
 module.exports = function (src, opts, fn) {
   var H = this,
-      creds = netrc()['neocities.org'],
+      creds = H.storage.netrc('neocities.org'),
       basepath = '/'
 
   if (opts.url) {
     basepath = url.parse(opts.url).pathname
   }
   if (!creds || !creds.login || !creds.password) {
-    H.log.fail('No credentials in .netrc for neocities.org.')
-    return callback()
+    return fn(new Error('No credentials in .netrc for neocities.org.'), true)
   }
 
+  //
+  // Compute all file hashes
+  //
   var count = counter(300),
-      api = new NeoCities(creds.login, creds.password),
-      currentfile = 'Neocities'
+      hashes = {}
   count.on('progress', () => {
-    H.log.info(`To Neocities: ${currentfile} (${count.at} of ${count.total})`)
+    H.log.info(`Hashing files (${count.at} of ${count.total})`)
   })
-  H.log.info('Connecting to Neocities.')
-  walk(src, (filepath, stat) => {
+  H.storage.walk(src, (filepath, stat) => {
     if (stat.isFile()) {
       count.todo()
       H.sha1file(filepath, sha1sum => {
         let filename = path.join(basepath, filepath.replace(src, ''))
-        api.post('upload_hash', [{name: filename, value: sha1sum}], resp => {
-          if (resp.files && resp.files[filename])
-            return count.done()
-
-          let obj = {path: filepath, name: filename}
-          api.upload([obj], resp => {
-            currentfile = obj.name 
-            if (resp.result == 'error') {
-              fn(new Error(resp.message), false)
-            }
-            count.done()
-          })
-        })
+        hashes[filename] = sha1sum
+        count.done()
       })
     }
   }, err => {
     count.start(() => {
-      fn(err, true)
+      var agent = request.agent().auth(creds.login, creds.password)
+      H.log.info('Connecting to Neocities.')
+      //
+      // Send all file hashes to be checked
+      //
+      agent.post('https://neocities.org/api/upload_hash')
+        .type('form')
+        .send(hashes)
+        .end((err, res) => {
+          if (err) {
+            fn(err, false)
+            return
+          }
+
+          //
+          // Upload the files that have changed.
+          //
+          let q = async.queue((task, fn) => {
+            agent.post('https://neocities.org/api/upload')
+              .attach(task.name, H.storage.createReadStream(task.value))
+              .end(fn)
+          })
+          q.drain = function () {
+            fn(null, true)
+          }
+          let total = Object.keys(hashes).length
+          for (let filename in hashes) {
+            if (res.body.files[filename])
+              continue
+
+            let filepath = path.join(src, filename.replace(basepath, ''))
+            q.push({name: filename, value: filepath}, (err, res) => {
+	      H.log.note(`Uploading files (${q.length()} left of ${total})`)
+              if (err)
+                fn(err, false)
+            })
+          }
+          if (q.idle()) {
+            fn(null, true)
+          }
+        })
     })
   })
 }

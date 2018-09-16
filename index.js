@@ -1,6 +1,6 @@
-const async = require('async')
 const counter = require('kicks-counter')
 const path = require('path')
+const queue = require('queue')
 const request = require('superagent')
 const url = require('url')
 
@@ -52,29 +52,27 @@ module.exports = function (src, opts, fn) {
           //
           // Upload the files that have changed.
           //
-          let q = async.queue((task, fn) => {
-            agent.post('https://neocities.org/api/upload')
-              .attach(task.name, H.storage.createReadStream(task.value))
-              .end(fn)
-          })
-          q.drain = function () {
-            fn(null, true)
-          }
+          let q = queue({concurrency: 1})
           let total = Object.keys(hashes).length
           for (let filename in hashes) {
             if (res.body.files[filename])
               continue
 
             let filepath = path.join(src, filename.replace(basepath, ''))
-            q.push({name: filename, value: filepath}, (err, res) => {
-	      H.log.note(`Uploading files (${q.length()} left of ${total})`)
-              if (err)
-                fn(err, false)
+            q.push(function (cb) {
+              agent.post('https://neocities.org/api/upload')
+                .attach(filename, H.storage.createReadStream(filepath))
+              .end((err, res) => {
+                H.log.note(`Uploading files (${q.length} left of ${total})`)
+                if (err)
+                  fn(err, false)
+                cb()
+              })
             })
           }
-          if (q.idle()) {
+          q.start(() => {
             fn(null, true)
-          }
+          })
         })
     })
   })

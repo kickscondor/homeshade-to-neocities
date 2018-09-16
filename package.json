@@ -22,8 +22,8 @@
   },
   "homepage": "https://github.com/kickscondor/homeshade-to-neocities#readme",
   "dependencies": {
-    "async": "^2.6.1",
     "kicks-counter": "^0.9.0",
+    "queue": "^4.5.0",
     "superagent": "^3.8.3"
   },
   "devDependencies": {}

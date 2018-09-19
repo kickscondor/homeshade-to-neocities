@@ -27,8 +27,8 @@ module.exports = function (src, opts, fn) {
   H.storage.walk(src, (filepath, stat) => {
     if (stat.isFile()) {
       count.todo()
-      H.sha1file(filepath, sha1sum => {
-        let filename = path.join(basepath, filepath.replace(src, ''))
+      H.sha1file(path.join(src, filepath), sha1sum => {
+        let filename = path.join(basepath, filepath)
         hashes[filename] = sha1sum
         count.done()
       })

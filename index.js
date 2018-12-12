@@ -1,4 +1,4 @@
-const counter = require('kicks-counter')
+const kicktock = require('kicktock')
 const path = require('path')
 const queue = require('queue')
 const request = require('superagent')
@@ -9,6 +9,7 @@ module.exports = function (src, opts, fn) {
       creds = H.storage.netrc('neocities.org'),
       basepath = '/'
 
+  console.log([src, opts])
   if (opts.url) {
     basepath = url.parse(opts.url).pathname
   }
@@ -19,22 +20,20 @@ module.exports = function (src, opts, fn) {
   //
   // Compute all file hashes
   //
-  var count = counter(300),
+  var K = kicktock(300),
       hashes = {}
-  count.on('progress', () => {
-    H.log.info(`Hashing files (${count.at} of ${count.total})`)
+  K.on('progress', () => {
+    H.log.info(`Hashing files (${K.at} of ${K.total})`)
   })
-  H.storage.walk(src, (filepath, stat) => {
+  H.storage.walk(src, K.errorFirst((filepath, stat) => {
     if (stat.isFile()) {
-      count.todo()
-      H.sha1file(path.join(src, filepath), sha1sum => {
+      H.sha1file(path.join(src, filepath), K(sha1sum => {
         let filename = path.join(basepath, filepath)
         hashes[filename] = sha1sum
-        count.done()
-      })
+      }))
     }
-  }, err => {
-    count.start(() => {
+  }), _ => {
+    K.go(_ => {
       var agent = request.agent().auth(creds.login, creds.password)
       H.log.info('Connecting to Neocities.')
       //

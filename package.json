@@ -1,6 +1,6 @@
 {
   "name": "homeshade-to-neocities",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Neocities uploader for Homeshade",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/kickscondor/homeshade-to-neocities#readme",
   "dependencies": {
-    "kicks-counter": "^0.9.0",
+    "kicktock": "^0.9.0",
     "queue": "^4.5.0",
     "superagent": "^3.8.3"
   },
